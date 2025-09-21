@@ -1,572 +1,473 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>6人網球單打循環賽</title>
-  <style>
-    :root {
-      --bg: #0f1115;
-      --card: #151925;
-      --muted: #a0aec0;
-      --text: #e6edf3;
-      --accent: #5b9cff;
-      --ok: #22c55e;
-      --warn: #f59e0b;
-      --err: #ef4444;
-      --border: #253048;
-      --chip: #1e2637;
-      --shadow: 0 10px 24px rgba(0,0,0,.35);
-      --radius: 14px;
-    }
-    @media (prefers-color-scheme: light) {
-      :root {
-        --bg: #f7f9fc;
-        --card: #ffffff;
-        --muted: #6b7280;
-        --text: #111827;
-        --accent: #2563eb;
-        --ok: #16a34a;
-        --warn: #d97706;
-        --err: #dc2626;
-        --border: #e5e7eb;
-        --chip: #eef2ff;
-        --shadow: 0 10px 24px rgba(0,0,0,.08);
-      }
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 600px at 10% -10%, rgba(91,156,255,.12), transparent),
-                  radial-gradient(1200px 600px at 110% 10%, rgba(91,156,255,.1), transparent),
-                  var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-    }
-    header {
-      padding: 28px 18px 10px;
-      text-align: center;
-    }
-    h1 {
-      margin: 0;
-      font-size: clamp(22px, 2.6vw, 34px);
-      letter-spacing: .4px;
-    }
-    .sub {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 14px;
-    }
-    .container {
-      max-width: 1100px;
-      margin: 20px auto 60px;
-      padding: 0 16px;
-    }
-    .card {
-      background: linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 18px;
-      margin-bottom: 18px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .grid input {
-      width: 100%; padding: 10px 12px; border-radius: 10px;
-      background: #0d1421; color: var(--text); border: 1px solid var(--border);
-    }
-    @media (prefers-color-scheme: light) {
-      .grid input { background: #fff; }
-    }
-    .actions {
-      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px;
-    }
-    button, .btn {
-      appearance: none;
-      border: 1px solid var(--border);
-      padding: 10px 14px;
-      border-radius: 10px;
-      background: linear-gradient(180deg, rgba(255,255,255,.05), transparent), var(--chip);
-      color: var(--text);
-      cursor: pointer;
-      transition: transform .05s ease, box-shadow .2s ease, background .2s ease;
-      text-decoration: none;
-      display: inline-flex;
-      gap: 8px;
-      align-items: center;
-    }
-    button:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
-    button.primary {
-      background: linear-gradient(180deg, rgba(255,255,255,.08), transparent), var(--accent);
-      color: white; border-color: transparent;
-    }
-    .pill {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 10px; border-radius: 999px; background: var(--chip);
-      border: 1px solid var(--border); color: var(--muted); font-size: 12px;
-    }
-    .round {
-      margin-top: 6px;
-      border-top: 1px solid var(--border);
-      padding-top: 10px;
-    }
-    .match {
-      display: grid; gap: 8px;
-      grid-template-columns: 1.2fr auto 1.2fr;
-      align-items: center;
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-      padding: 12px;
-      margin: 8px 0;
-      background: rgba(255,255,255,.02);
-    }
-    .vs { text-align: center; color: var(--muted); font-size: 12px; }
-    .match .score {
-      grid-column: 1 / -1;
-      display: grid; gap: 8px;
-      grid-template-columns: 1fr;
-    }
-    .match input[type="text"] {
-      width: 100%; padding: 8px 10px; border-radius: 8px;
-      background: #0d1421; color: var(--text); border: 1px solid var(--border);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-    }
-    @media (prefers-color-scheme: light) {
-      .match input[type="text"] { background: #fff; }
-    }
-    .hint { color: var(--muted); font-size: 12px; }
-    table {
-      width: 100%; border-collapse: collapse; overflow: hidden;
-      border-radius: 12px; border: 1px solid var(--border);
-      background: var(--card);
-    }
-    th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: center; }
-    thead th { position: sticky; top: 0; background: linear-gradient(180deg, rgba(255,255,255,.05), transparent), var(--card); z-index: 1; }
-    tbody tr:hover { background: rgba(91,156,255,.06); }
-    .rank { font-weight: 700; }
-    .nameCell { text-align: left; }
-    .ok { color: var(--ok); }
-    .warn { color: var(--warn); }
-    .err { color: var(--err); }
-    .footer-note { color: var(--muted); font-size: 12px; margin-top: 10px; }
-    .two-col {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-    }
-    @media (max-width: 900px) {
-      .grid { grid-template-columns: 1fr 1fr; }
-      .two-col { grid-template-columns: 1fr; }
-    }
-    .kbd {
-      padding: 2px 6px; border: 1px solid var(--border); border-bottom-width: 2px;
-      border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;
-      background: var(--chip); color: var(--text);
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>6人網球單打循環賽｜Live</title>
+<style>
+  :root{
+    --bg:#0f1115;--card:#151925;--muted:#94a3b8;--text:#e6edf3;--accent:#5b9cff;
+    --ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--border:#243049;--chip:#1c2436;
+    --shadow:0 10px 24px rgba(0,0,0,.35);--radius:14px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{--bg:#f7f9fc;--card:#ffffff;--muted:#6b7280;--text:#111827;--accent:#2563eb;
+      --ok:#16a34a;--warn:#d97706;--err:#dc2626;--border:#e5e7eb;--chip:#eef2ff;--shadow:0 10px 24px rgba(0,0,0,.08);}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+  header{padding:26px 16px 8px;text-align:center}
+  h1{margin:0;font-size:clamp(22px,2.4vw,34px)}
+  .sub{color:var(--muted);font-size:14px;margin-top:6px}
+  .container{max-width:1100px;margin:18px auto 80px;padding:0 16px}
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--border);
+        border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--chip);
+        border:1px solid var(--border);color:var(--muted);font-size:12px}
+  .grid{display:grid;gap:10px}
+  .two{grid-template-columns:1fr 1fr}
+  .three{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:900px){.two,.three{grid-template-columns:1fr}}
+  input[type="text"], select{width:100%;padding:10px 12px;border-radius:10px;background:#0d1421;color:var(--text);border:1px solid var(--border)}
+  @media (prefers-color-scheme: light){input[type="text"], select{background:#fff}}
+  .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  button,.btn{appearance:none;border:1px solid var(--border);padding:10px 14px;border-radius:10px;background:linear-gradient(180deg,rgba(255,255,255,.05),transparent),var(--chip);
+              color:var(--text);cursor:pointer;transition:transform .06s ease, box-shadow .2s ease;text-decoration:none;display:inline-flex;gap:8px;align-items:center}
+  button:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+  .primary{background:linear-gradient(180deg,rgba(255,255,255,.08),transparent),var(--accent);color:#fff;border-color:transparent}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)}
+  table{width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:center}
+  thead th{position:sticky;top:0;background:linear-gradient(180deg,rgba(255,255,255,.05),transparent),var(--card);z-index:1}
+  tbody tr:hover{background:rgba(91,156,255,.07)}
+  .nameCell{text-align:left}
+  .match{display:grid;gap:8px;grid-template-columns:1.2fr auto 1.2fr;align-items:center;border:1px dashed var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
+  .vs{text-align:center;color:var(--muted);font-size:12px}
+  .scoreRow{grid-column:1/-1;display:grid;gap:8px;grid-template-columns:1fr}
+  .fixed-bottom-bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.35));display:flex;justify-content:center;z-index:30}
+  .center-splash{display:flex;align-items:center;justify-content:center;min-height:45vh}
+  .kbd{padding:2px 6px;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:var(--chip);color:var(--text)}
+  .roleTag{margin-left:6px}
+  .readonly input,.readonly select{pointer-events:none;opacity:.7}
+  .woTag{font-size:12px;color:var(--warn)}
+</style>
 </head>
 <body>
-  <header>
-    <h1>6 人網球單打循環賽</h1>
-    <div class="sub">輸入球員姓名 ➜ 產生賽程 ➜ 填比分 ➜ 自動計算排名（最佳三盤兩勝制）</div>
-  </header>
+<header>
+  <h1>6 人網球單打循環賽</h1>
+  <div class="sub">角色選擇 ➜（工作人員輸入比分）➜ 觀賽者即時同步｜支援棄賽（只計勝負）</div>
+</header>
 
-  <div class="container">
-    <div class="card">
-      <div class="pill">步驟 1：輸入球員（6 位）</div>
-      <div class="grid" id="playerInputs"></div>
-      <div class="actions">
-        <button class="primary" id="genScheduleBtn">產生賽程</button>
-        <button id="clearAllBtn" title="清空選手、賽程與成績">全部重設</button>
-        <button id="saveBtn" title="儲存到瀏覽器（自動也會儲存）">手動儲存</button>
-        <button id="loadBtn" title="載入先前儲存">載入儲存</button>
-        <button id="exportBtn">匯出 JSON</button>
-        <label class="btn" for="importFile" title="從 JSON 匯入"><input id="importFile" type="file" accept=".json" style="display:none">匯入 JSON</label>
-      </div>
-      <div class="footer-note">小技巧：按 <span class="kbd">Tab</span> 可快速切換輸入欄位；支援自動儲存（localStorage）。</div>
+<div id="roleGate" class="container">
+  <div class="card">
+    <div class="pill">選擇角色</div>
+    <div class="center-splash">
+      <button id="enterSpectator" class="primary" style="font-size:18px;padding:14px 22px;border-radius:999px">我是觀賽者</button>
     </div>
+    <div style="text-align:center;color:var(--muted);margin-top:8px">或在下方以密碼進入「計分工作人員」模式</div>
+  </div>
+  <div class="fixed-bottom-bar">
+    <button id="enterStaff">我是計分工作人員</button>
+  </div>
+</div>
 
-    <div class="two-col">
-      <div class="card" id="scheduleCard" style="display:none">
-        <div class="pill">步驟 2：賽程（5 輪，每輪 3 場）</div>
-        <div id="rounds"></div>
-        <div class="hint">比分格式範例：<code>6-3, 4-6, 7-5</code> 或 <code>6-4, 6-4</code>。系統會自動判定勝者與盤/局差。</div>
-      </div>
-
-      <div class="card" id="standingsCard" style="display:none">
-        <div class="pill">步驟 3：戰績與排名（自動計算）</div>
-        <div style="overflow:auto">
-          <table id="standingsTable" aria-describedby="standingsHelp">
-            <thead>
-              <tr>
-                <th>#</th><th>球員</th><th>勝</th><th>負</th><th>勝率</th>
-                <th>盤數 SW-SL</th><th>盤差</th>
-                <th>局數 GW-GL</th><th>局差</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div id="standingsHelp" class="footer-note">
-          決勝順序：勝場 ➜ 兩人平手看交手 ➜ 盤差 ➜ 局差 ➜ 總局勝 ➜ 名字。
-        </div>
-      </div>
+<div id="app" class="container" style="display:none">
+  <div class="card">
+    <div class="pill">
+      基本設定
+      <span id="roleBadge" class="roleTag"></span>
     </div>
-
-    <div class="card">
-      <div class="pill">常見問題</div>
-      <details>
-        <summary>我可以修改球員名字後重排賽程嗎？</summary>
-        <div class="footer-note">可以。更名後按「產生賽程」會以新名單重建賽程，既有比分會被清空（請先匯出備份）。</div>
-      </details>
-      <details>
-        <summary>盤數/局數如何計算？</summary>
-        <div class="footer-note">依你輸入的每盤比分自動計算。輸入例：<code>7-6, 3-6, 6-2</code>（允許搶七），或兩盤直落。</div>
-      </details>
-      <details>
-        <summary>支援中斷/未賽？</summary>
-        <div class="footer-note">若某場沒有輸入比分，該場不計入任何人的勝負與盤/局數。</div>
-      </details>
+    <div class="grid three" id="playerInputs"></div>
+    <div class="actions">
+      <button class="primary" id="genScheduleBtn">產生賽程</button>
+      <button id="saveBtn">手動儲存</button>
+      <button id="loadBtn">載入儲存</button>
+      <button id="exportBtn">匯出 JSON</button>
+      <label class="btn" for="importFile"><input id="importFile" type="file" accept=".json" style="display:none">匯入 JSON</label>
+      <button id="switchRoleBtn">切換角色</button>
     </div>
+    <div class="sub" style="margin-top:6px">提示：按 <span class="kbd">S</span> 可快速切換觀賽者/工作人員（需有密碼）。</div>
   </div>
 
-  <script>
-    // ===== 工具 =====
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
+  <div class="grid two">
+    <div class="card" id="liveBoardCard" style="display:none">
+      <div class="pill">即時對戰紀錄 Live Board</div>
+      <div id="liveBoard"></div>
+      <div class="sub" style="margin-top:6px">
+        比分輸入格式：<code>6-3, 4-6, 7-5</code>（或兩盤直落）。<br/>
+        棄賽設定：「只計勝負、不計盤局數」。
+      </div>
+    </div>
 
-    const STORAGE_KEY = 'rr-tennis-6';
-    const DEFAULT_NAMES = ['Player A','Player B','Player C','Player D','Player E','Player F'];
+    <div class="card" id="standingsCard" style="display:none">
+      <div class="pill">戰績與排名</div>
+      <div style="overflow:auto">
+        <table id="standingsTable">
+          <thead>
+            <tr>
+              <th>#</th><th>球員</th><th>勝</th><th>負</th><th>勝率</th>
+              <th>盤數 SW-SL</th><th>盤差</th>
+              <th>局數 GW-GL</th><th>局差</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="sub">決勝順序：勝場 ➜ 兩人平手看交手 ➜ 盤差 ➜ 局差 ➜ 總局勝 ➜ 名字。</div>
+    </div>
+  </div>
+</div>
 
-    function saveState(state) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
-    }
-    function loadState() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? JSON.parse(raw) : null;
-      } catch(e){ return null; }
-    }
+<script>
+/** ===================== 基本工具 ===================== */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const STORAGE_KEY = 'rr-tennis-6-live';
+const STAFF_PIN = '246810'; // ★★★ 修改這裡更換計分人員密碼（僅數字）
 
-    function createPlayerInputs() {
-      const wrap = $('#playerInputs');
-      wrap.innerHTML = '';
-      for (let i=0;i<6;i++) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = `球員 ${i+1}`;
-        input.value = DEFAULT_NAMES[i];
-        input.dataset.index = i;
-        wrap.appendChild(input);
+// 跨分頁即時同步
+const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('rr6') : null;
+function broadcast(type, payload){ try{ bc && bc.postMessage({type, payload}); }catch(e){} }
+if (bc) bc.onmessage = (ev)=>{ handleExternalUpdate(ev.data); };
+window.addEventListener('storage', (e)=>{ if (e.key === STORAGE_KEY) { try{
+  const st = JSON.parse(e.newValue || '{}'); if (st?.__ts && st.__ts !== state.__ts) { state = st; renderAll(); }
+} catch(err){} }});
+
+function saveState(){
+  state.__ts = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  broadcast('state', state);
+}
+function loadState(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); return raw? JSON.parse(raw): null; }catch(e){ return null; }
+}
+function handleExternalUpdate(msg){
+  if (!msg || msg.type!=='state' || !msg.payload) return;
+  if (msg.payload.__ts && msg.payload.__ts !== state.__ts){
+    state = msg.payload; renderAll();
+  }
+}
+
+/** ===================== 資料模型 ===================== */
+const DEFAULT_NAMES = ['Player A','Player B','Player C','Player D','Player E','Player F'];
+
+let state = {
+  role: 'spectator', // 'spectator' | 'staff'
+  players: DEFAULT_NAMES.slice(),
+  rounds: [],        // [ [ [A,B],[C,D],[E,F] ], ... x5 ]
+  results: {},       // key=r{r}_m{m} -> { scoreText, forfeit:'none'|'A'|'B'|'both' }
+  __ts: 0
+};
+
+/** ===================== 比分解析與計算 ===================== */
+function parseScore(text){
+  if(!text || !text.trim()) return {valid:false, reason:'empty'};
+  const rawSets = text.split(',').map(s=>s.trim()).filter(Boolean);
+  let swA=0, swB=0, gwA=0, gwB=0;
+  for(const s of rawSets){
+    const m = s.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
+    if(!m) return {valid:false, reason:'format', at:s};
+    const a = +m[1], b = +m[2];
+    gwA += a; gwB += b;
+    if (a>b) swA++; else if (b>a) swB++;
+  }
+  if (swA===swB) {
+    // 若盤數打平，視為未決，避免亂算勝負
+    return {valid:true, undecided:true, sets:rawSets.length, sw:[swA,swB], gw:[gwA,gwB]};
+  }
+  return {valid:true, sets:rawSets.length, sw:[swA,swB], gw:[gwA,gwB]};
+}
+
+function computeStandings(){
+  const names = state.players.slice();
+  const stats = Object.fromEntries(names.map(n=>[n,{name:n,W:0,L:0,SW:0,SL:0,GW:0,GL:0}]));
+  const h2h = {};
+
+  state.rounds.forEach((pairings, rIdx)=>{
+    pairings.forEach((p, mIdx)=>{
+      const [A,B] = p;
+      const key = `r${rIdx}_m${mIdx}`;
+      const rec = state.results[key];
+      if(!rec) return;
+
+      // 棄賽處理：只計勝負、不計盤/局
+      if (rec.forfeit && rec.forfeit!=='none'){
+        if (rec.forfeit==='A'){ stats[B].W++; stats[A].L++; h2h[`${B}__${A}`]=1; }
+        else if (rec.forfeit==='B'){ stats[A].W++; stats[B].L++; h2h[`${A}__${B}`]=1; }
+        // both：不計（兩敗俱傷），或你想記 L+L；此處選擇「不計」較合理
+        return;
       }
-    }
 
-    // 產生 6 人循環賽（圓桌演算法）
-    function generateRoundRobin(names) {
-      const n = names.length; // 6
-      if (n !== 6) throw new Error('限 6 人');
-      // 固定第一個，旋轉其餘
-      const arr = names.slice();
-      const fixed = arr[0];
-      let others = arr.slice(1);
-      const rounds = [];
-      for (let r=0; r<n-1; r++) {
-        const pairings = [];
-        const left = [fixed, ...others.slice(0, (n/2)-1)];
-        const right = others.slice((n/2)-1).slice().reverse();
-        for (let i=0;i<left.length;i++) {
-          pairings.push([ left[i], right[i] ]);
+      if (!rec.scoreText) return;
+      const info = parseScore(rec.scoreText);
+      if(!info.valid || info.undecided) return;
+
+      const swA = info.sw[0], swB = info.sw[1];
+      const gwA = info.gw[0], gwB = info.gw[1];
+
+      if (swA>swB){ stats[A].W++; stats[B].L++; h2h[`${A}__${B}`]=1; }
+      else { stats[B].W++; stats[A].L++; h2h[`${B}__${A}`]=1; }
+
+      stats[A].SW += swA; stats[A].SL += swB;
+      stats[B].SW += swB; stats[B].SL += swA;
+      stats[A].GW += gwA; stats[A].GL += gwB;
+      stats[B].GW += gwB; stats[B].GL += gwA;
+    });
+  });
+
+  const arr = Object.values(stats);
+  arr.sort((a,b)=>{
+    if (b.W!==a.W) return b.W-a.W;
+    const ab = h2h[`${a.name}__${b.name}`]?1:0;
+    const ba = h2h[`${b.name}__${a.name}`]?1:0;
+    if (ab!==ba) return ba-ab;
+    const sdA=a.SW-a.SL, sdB=b.SW-b.SL; if (sdB!==sdA) return sdB-sdA;
+    const gdA=a.GW-a.GL, gdB=b.GW-b.GL; if (gdB!==gdA) return gdB-gdA;
+    if (b.GW!==a.GW) return b.GW-a.GW;
+    return a.name.localeCompare(b.name,'zh-Hant');
+  });
+  arr.forEach((p,i)=>{ const t=p.W+p.L; p.rank=i+1; p.pct=t? (p.W/t):0; });
+  return arr;
+}
+
+/** ===================== 排程演算法（6人圓桌） ===================== */
+function generateRoundRobin(names){
+  const n = names.length;
+  if (n!==6) throw new Error('目前版本限定 6 人');
+  const arr = names.slice();
+  const fixed = arr[0];
+  let others = arr.slice(1);
+  const rounds=[];
+  for (let r=0;r<n-1;r++){
+    const pairings=[];
+    const left = [fixed, ...others.slice(0,(n/2)-1)];
+    const right = others.slice((n/2)-1).slice().reverse();
+    for (let i=0;i<left.length;i++) pairings.push([left[i], right[i]]);
+    rounds.push(pairings);
+    others = [others[others.length-1], ...others.slice(0,others.length-1)];
+  }
+  return rounds; // 5 輪 × 每輪 3 場
+}
+
+/** ===================== 介面初始化 ===================== */
+function createPlayerInputs(){
+  const wrap = $('#playerInputs'); wrap.innerHTML='';
+  for(let i=0;i<6;i++){
+    const inp = document.createElement('input');
+    inp.type='text'; inp.placeholder=`球員 ${i+1}`; inp.value = state.players[i] || '';
+    inp.dataset.index=i; wrap.appendChild(inp);
+  }
+}
+
+function renderLiveBoard(){
+  const box = $('#liveBoard'); box.innerHTML='';
+  if (!state.rounds?.length){ $('#liveBoardCard').style.display='none'; return; }
+  $('#liveBoardCard').style.display='';
+
+  state.rounds.forEach((pairings, rIdx)=>{
+    const roundEl = document.createElement('div');
+    roundEl.className='card';
+    roundEl.style.padding='12px';
+    roundEl.innerHTML = `<div class="pill">第 ${rIdx+1} 輪</div>`;
+    pairings.forEach((p, mIdx)=>{
+      const [A,B] = p;
+      const key = `r${rIdx}_m${mIdx}`;
+      const rec = state.results[key] || {scoreText:'', forfeit:'none'};
+
+      const matchEl = document.createElement('div');
+      matchEl.className='match';
+      matchEl.innerHTML = `
+        <div>${A}</div>
+        <div class="vs">vs</div>
+        <div>${B}</div>
+        <div class="scoreRow">
+          <div class="grid two">
+            <input type="text" inputmode="numeric" placeholder="輸入比分：如 6-3, 4-6, 7-5" data-k="${key}" class="scoreInp">
+            <select data-k="${key}" class="forfeitSel">
+              <option value="none">正常進行</option>
+              <option value="A">${A} 棄賽</option>
+              <option value="B">${B} 棄賽</option>
+              <option value="both">雙方棄賽（不計）</option>
+            </select>
+          </div>
+          <div class="sub" id="hint_${key}"></div>
+        </div>
+      `;
+      const inp = matchEl.querySelector('.scoreInp');
+      const sel = matchEl.querySelector('.forfeitSel');
+      inp.value = rec.scoreText || '';
+      sel.value = rec.forfeit || 'none';
+
+      const applyHint = ()=>{
+        const h = matchEl.querySelector(`#hint_${key}`);
+        if (sel.value!=='none'){
+          const woText = sel.value==='A' ? `${A} 棄賽，${B} 取得勝場（不計盤/局）`
+                        : sel.value==='B' ? `${B} 棄賽，${A} 取得勝場（不計盤/局）`
+                        : `雙方棄賽，此場不計入`;
+          h.innerHTML = `<span class="woTag">${woText}</span>`;
+          return;
         }
-        rounds.push(pairings);
-        // 旋轉 others
-        others = [others[others.length-1], ...others.slice(0, others.length-1)];
-      }
-      return rounds; // 5 輪，每輪 3 場
-    }
+        if (!inp.value.trim()){ h.textContent=''; return; }
+        const info = parseScore(inp.value);
+        if (!info.valid){ h.innerHTML = `<span class="err">格式錯誤，請使用 6-4, 6-4 之類格式</span>`; return; }
+        if (info.undecided){ h.innerHTML = `<span class="warn">盤數相同，尚未決定勝負</span>`; return; }
+        const winner = info.sw[0]>info.sw[1] ? A : B;
+        h.innerHTML = `<span class="ok">已記錄</span>｜盤數 ${info.sw[0]}-${info.sw[1]}、局數 ${info.gw[0]}-${info.gw[1]}｜勝者：<strong>${winner}</strong>`;
+      };
+      applyHint();
 
-    // 解析比分字串 -> {sets:[{a,b}], sw:[a,b], gw:[a,b], valid, reason}
-    function parseScore(text) {
-      if (!text || !text.trim()) return { valid:false, reason:'empty' };
-      const rawSets = text.split(',').map(s => s.trim()).filter(Boolean);
-      const sets = [];
-      let swA=0, swB=0, gwA=0, gwB=0;
-      for (const s of rawSets) {
-        const m = s.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
-        if (!m) return { valid:false, reason:'format', at:s };
-        const a = parseInt(m[1],10), b = parseInt(m[2],10);
-        // 基本合理性檢查（寬鬆）：允許 6-x（差≥2），7-5，7-6（搶七），也接受 10-? 作超級搶十（雙打常見，單打偶有）
-        const max = Math.max(a,b), min = Math.min(a,b);
-        const diff = Math.abs(a-b);
-        const plausible =
-          (max === 6 && diff >= 2 && min <= 4) ||
-          (max === 7 && (diff === 1 || diff === 2)) ||
-          (max >= 8 && diff === 2) ||
-          (max === 10 && diff >= 2); // 超級搶十
-        if (!plausible) {
-          // 不阻擋，僅標記可疑
-          // return { valid:false, reason:'implausible', at:s };
-        }
-        sets.push({a,b});
-        gwA += a; gwB += b;
-        if (a>b) swA++; else if (b>a) swB++; // 如果平手（不應出現）則不計
-      }
-      // 最佳三盤兩勝；若輸入 1 盤直落或 2 盤、3 盤都接受
-      const finished = swA === 2 || swB === 2 || rawSets.length >= 2;
-      return { valid:true, sets, sw:[swA,swB], gw:[gwA,gwB], finished };
-    }
-
-    // 狀態
-    let state = {
-      players: DEFAULT_NAMES.slice(),
-      rounds: [],         // [ [ [A,B], [C,D], [E,F] ], ... x5 ]
-      results: {}         // key = `r{idx}_m{idx}` -> { scoreText }
-    };
-
-    // UI 綁定
-    function bindUI() {
-      // 初始載入
-      const saved = loadState();
-      if (saved) {
-        state = saved;
-        // 玩家
-        $$('#playerInputs input').forEach((inp, i) => inp.value = state.players[i] || '');
-        // 若已有賽程，渲染
-        if (state.rounds?.length) {
-          renderSchedule();
-          renderStandings();
-          $('#scheduleCard').style.display = '';
-          $('#standingsCard').style.display = '';
-        }
-      }
-
-      $('#genScheduleBtn').addEventListener('click', () => {
-        const names = $$('#playerInputs input').map(i => i.value.trim()).map((v,i)=> v || `球員${i+1}`);
-        if (new Set(names).size < names.length) {
-          if (!confirm('偵測到重複姓名，仍然繼續？')) return;
-        }
-        state.players = names;
-        state.rounds = generateRoundRobin(names);
-        state.results = {};
-        saveState(state);
-        renderSchedule();
-        renderStandings();
-        $('#scheduleCard').style.display = '';
-        $('#standingsCard').style.display = '';
-      });
-
-      $('#clearAllBtn').addEventListener('click', () => {
-        if (!confirm('確定要清空所有資料？（不可復原）')) return;
-        createPlayerInputs();
-        state = { players: DEFAULT_NAMES.slice(), rounds: [], results: {} };
-        saveState(state);
-        $('#rounds').innerHTML = '';
-        $('#scheduleCard').style.display = 'none';
-        $('#standingsCard').style.display = 'none';
-      });
-
-      $('#saveBtn').addEventListener('click', () => saveState(state));
-      $('#loadBtn').addEventListener('click', () => {
-        const s = loadState();
-        if (!s) { alert('沒有可載入的資料'); return; }
-        state = s;
-        $$('#playerInputs input').forEach((inp, i) => inp.value = state.players[i] || '');
-        if (state.rounds?.length) {
-          renderSchedule();
-          renderStandings();
-          $('#scheduleCard').style.display = '';
-          $('#standingsCard').style.display = '';
-        }
-      });
-
-      $('#exportBtn').addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'round_robin_6.json';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 500);
-      });
-
-      $('#importFile').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const data = JSON.parse(reader.result);
-            if (!Array.isArray(data.players) || !Array.isArray(data.rounds)) throw new Error('格式不符');
-            state = data;
-            createPlayerInputs();
-            $$('#playerInputs input').forEach((inp, i) => inp.value = state.players[i] || '');
-            renderSchedule();
-            renderStandings();
-            $('#scheduleCard').style.display = '';
-            $('#standingsCard').style.display = '';
-            saveState(state);
-          } catch(err) {
-            alert('匯入失敗：' + err.message);
+      // 權限控制：觀賽者不可修改
+      if (state.role!=='staff'){
+        inp.disabled = true; sel.disabled = true; matchEl.classList.add('readonly');
+      } else {
+        inp.addEventListener('input', ()=>{
+          state.results[key] = state.results[key] || {};
+          state.results[key].scoreText = inp.value;
+          // 若有比分則自動切回「正常進行」
+          if (state.results[key].forfeit && state.results[key].forfeit!=='none') {
+            state.results[key].forfeit = 'none';
+            sel.value='none';
           }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-      });
-    }
-
-    function renderSchedule() {
-      const container = $('#rounds');
-      container.innerHTML = '';
-      state.rounds.forEach((pairings, rIdx) => {
-        const roundEl = document.createElement('div');
-        roundEl.className = 'round';
-        const title = document.createElement('h3');
-        title.textContent = `第 ${rIdx+1} 輪`;
-        roundEl.appendChild(title);
-
-        pairings.forEach((p, mIdx) => {
-          const [A, B] = p;
-          const matchEl = document.createElement('div');
-          matchEl.className = 'match';
-          matchEl.innerHTML = `
-            <div>${A}</div>
-            <div class="vs">vs</div>
-            <div>${B}</div>
-            <div class="score">
-              <input type="text" placeholder="請輸入比分，例如：6-3, 4-6, 7-5" data-r="${rIdx}" data-m="${mIdx}" />
-              <div class="hint" id="hint_r${rIdx}_m${mIdx}"></div>
-            </div>
-          `;
-          const inp = matchEl.querySelector('input');
-          const key = `r${rIdx}_m${mIdx}`;
-          if (state.results[key]?.scoreText) inp.value = state.results[key].scoreText;
-
-          inp.addEventListener('input', () => {
-            const val = inp.value;
-            state.results[key] = { scoreText: val };
-            saveState(state);
-            const info = parseScore(val);
-            const hint = matchEl.querySelector(`#hint_${key}`);
-            if (!val.trim()) { hint.textContent = ''; renderStandings(); return; }
-            if (!info.valid) {
-              hint.innerHTML = `<span class="err">格式錯誤</span>`;
-            } else {
-              const winner = info.sw[0] > info.sw[1] ? A : (info.sw[1] > info.sw[0] ? B : '未定');
-              const detail = `盤數 ${info.sw[0]}-${info.sw[1]}、局數 ${info.gw[0]}-${info.gw[1]}`;
-              hint.innerHTML = `<span class="ok">已記錄</span>｜${detail}｜勝者：<strong>${winner}</strong>`;
-            }
-            renderStandings();
-          });
-
-          roundEl.appendChild(matchEl);
+          saveState(); applyHint(); renderStandings(); // 即時更新
         });
-
-        container.appendChild(roundEl);
-      });
-    }
-
-    function computeStandings() {
-      const names = state.players.slice();
-      const stats = Object.fromEntries(names.map(n => [n, {
-        name:n, W:0, L:0, SW:0, SL:0, GW:0, GL:0
-      }]));
-
-      // 逐場加總
-      state.rounds.forEach((pairings, rIdx) => {
-        pairings.forEach((p, mIdx) => {
-          const [A,B] = p;
-          const key = `r${rIdx}_m${mIdx}`;
-          const s = state.results[key]?.scoreText;
-          if (!s) return; // 未輸入，跳過
-          const info = parseScore(s);
-          if (!info.valid) return;
-
-          // 判斷勝者
-          const swA = info.sw[0], swB = info.sw[1];
-          // 若盤數相同（不合理），不計
-          if (swA === swB) return;
-
-          if (swA > swB) { stats[A].W++; stats[B].L++; }
-          else { stats[B].W++; stats[A].L++; }
-
-          stats[A].SW += swA; stats[A].SL += swB;
-          stats[B].SW += swB; stats[B].SL += swA;
-
-          stats[A].GW += info.gw[0]; stats[A].GL += info.gw[1];
-          stats[B].GW += info.gw[1]; stats[B].GL += info.gw[0];
+        sel.addEventListener('change', ()=>{
+          state.results[key] = state.results[key] || {};
+          state.results[key].forfeit = sel.value;
+          if (sel.value!=='none'){ // 棄賽時清空比分避免混淆
+            state.results[key].scoreText = '';
+            inp.value = '';
+          }
+          saveState(); applyHint(); renderStandings();
         });
-      });
+      }
 
-      // 兩人平手交手結果映射
-      const headToHead = {};
-      state.rounds.forEach((pairings, rIdx) => {
-        pairings.forEach((p, mIdx) => {
-          const [A,B] = p;
-          const key = `r${rIdx}_m${mIdx}`;
-          const s = state.results[key]?.scoreText;
-          if (!s) return;
-          const info = parseScore(s);
-          if (!info.valid || info.sw[0]===info.sw[1]) return;
-          const winner = info.sw[0] > info.sw[1] ? A : B;
-          const loser  = info.sw[0] > info.sw[1] ? B : A;
-          headToHead[`${winner}__${loser}`] = 1;
-        });
-      });
+      roundEl.appendChild(matchEl);
+    });
+    box.appendChild(roundEl);
+  });
+}
 
-      const arr = Object.values(stats);
+function renderStandings(){
+  const tbody = $('#standingsTable tbody'); if(!tbody) return;
+  if (!state.rounds?.length){ $('#standingsCard').style.display='none'; return; }
+  $('#standingsCard').style.display='';
+  const data = computeStandings();
+  tbody.innerHTML='';
+  data.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${p.rank}</td>
+      <td class="nameCell">${p.name}</td>
+      <td>${p.W}</td>
+      <td>${p.L}</td>
+      <td>${(p.pct*100).toFixed(1)}%</td>
+      <td>${p.SW}-${p.SL}</td>
+      <td>${p.SW-p.SL}</td>
+      <td>${p.GW}-${p.GL}</td>
+      <td>${p.GW-p.GL}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
-      // 排序與決勝
-      arr.sort((a,b) => {
-        if (b.W !== a.W) return b.W - a.W; // 勝場
-        // 兩人平手 -> 看交手
-        const ab = headToHead[`${a.name}__${b.name}`] ? 1 : 0;
-        const ba = headToHead[`${b.name}__${a.name}`] ? 1 : 0;
-        if (ab !== ba) return ba - ab; // 若 b 擊敗 a，ba=1 -> b 在前
-        const setDiffA = a.SW - a.SL, setDiffB = b.SW - b.SL;
-        if (setDiffB !== setDiffA) return setDiffB - setDiffA; // 盤差
-        const gameDiffA = a.GW - a.GL, gameDiffB = b.GW - b.GL;
-        if (gameDiffB !== gameDiffA) return gameDiffB - gameDiffA; // 局差
-        if (b.GW !== a.GW) return b.GW - a.GW; // 總局勝
-        return a.name.localeCompare(b.name, 'zh-Hant'); // 名字
-      });
+function renderAll(){
+  // 玩家欄位
+  $$('#playerInputs input').forEach((inp,i)=> inp.value = state.players[i] || '');
+  // Role badge
+  $('#roleBadge').textContent = state.role==='staff' ? '（計分工作人員）' : '（觀賽者）';
+  // Live board + standings
+  renderLiveBoard(); renderStandings();
+}
 
-      // 加上名次與勝率
-      arr.forEach((p, i) => {
-        const total = p.W + p.L;
-        p.rank = i+1;
-        p.pct = total ? (p.W/total) : 0;
-      });
+function enterApp(){
+  $('#roleGate').style.display='none';
+  $('#app').style.display='';
+  createPlayerInputs();
+  renderAll();
+}
 
-      return arr;
+/** ===================== 綁定與互動 ===================== */
+function bind(){
+  // 角色入口
+  $('#enterSpectator').addEventListener('click', ()=>{
+    state.role='spectator'; saveState(); enterApp();
+  });
+  $('#enterStaff').addEventListener('click', ()=>{
+    const pin = prompt('請輸入工作人員數字密碼：');
+    if (pin===STAFF_PIN){ state.role='staff'; saveState(); enterApp(); }
+    else if (pin!==null){ alert('密碼錯誤'); }
+  });
+
+  // 內部切換
+  $('#switchRoleBtn').addEventListener('click', ()=>{
+    if (state.role==='staff'){ state.role='spectator'; saveState(); renderAll(); return; }
+    const pin = prompt('請輸入工作人員數字密碼：');
+    if (pin===STAFF_PIN){ state.role='staff'; saveState(); renderAll(); } else if (pin!==null){ alert('密碼錯誤'); }
+  });
+
+  // players
+  $('#genScheduleBtn').addEventListener('click', ()=>{
+    const names = $$('#playerInputs input').map(i=> i.value.trim() || i.placeholder);
+    if (new Set(names).size<names.length){
+      if (!confirm('偵測到重複姓名，仍然使用這些名字？')) return;
     }
+    state.players = names;
+    state.rounds = generateRoundRobin(names);
+    state.results = {};
+    saveState(); renderAll();
+  });
 
-    function renderStandings() {
-      if (!state.rounds?.length) return;
-      const tbody = $('#standingsTable tbody');
-      const data = computeStandings();
-      tbody.innerHTML = '';
-      data.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="rank">${p.rank}</td>
-          <td class="nameCell">${p.name}</td>
-          <td>${p.W}</td>
-          <td>${p.L}</td>
-          <td>${(p.pct*100).toFixed(1)}%</td>
-          <td>${p.SW}-${p.SL}</td>
-          <td>${p.SW - p.SL}</td>
-          <td>${p.GW}-${p.GL}</td>
-          <td>${p.GW - p.GL}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      saveState(state);
+  $('#saveBtn').addEventListener('click', saveState);
+  $('#loadBtn').addEventListener('click', ()=>{
+    const s = loadState(); if(!s){ alert('沒有可載入的資料'); return; }
+    state = s; renderAll();
+  });
+  $('#exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url; a.download='round_robin_6_live.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500);
+  });
+  $('#importFile').addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try{
+        const data = JSON.parse(reader.result);
+        if (!Array.isArray(data.players) || !Array.isArray(data.rounds)) throw new Error('格式不符');
+        state = data; saveState(); renderAll();
+      }catch(err){ alert('匯入失敗：' + err.message); }
+    };
+    reader.readAsText(f); e.target.value='';
+  });
+
+  // 快捷鍵 S 切換角色（需密碼）
+  window.addEventListener('keydown', (ev)=>{
+    if (ev.key.toLowerCase()==='s'){
+      if (state.role==='staff'){ state.role='spectator'; saveState(); renderAll(); }
+      else{
+        const pin = prompt('請輸入工作人員密碼：');
+        if (pin===STAFF_PIN){ state.role='staff'; saveState(); renderAll(); }
+      }
     }
+  });
+}
 
-    // 初始化
-    createPlayerInputs();
-    bindUI();
-  </script>
+/** ===================== 啟動 ===================== */
+(function init(){
+  createPlayerInputs();
+  bind();
+  const saved = loadState();
+  if (saved){
+    state = saved;
+  }
+  // 若曾經進入過 app，就直接顯示（沿用角色）
+  if (state.rounds?.length || state.__ts){
+    $('#roleGate').style.display='none';
+    $('#app').style.display='';
+    renderAll();
+  }
+})();
+</script>
 </body>
 </html>
