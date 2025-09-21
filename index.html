@@ -5,67 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Google Sheet 即時看板</title>
   <style>
-    :root {
-      --radius: 12px;
-      --shadow: 0 6px 22px rgba(0,0,0,.08);
-      --border: 1px solid #e9e9ef;
-    }
+    :root { --radius: 12px; --shadow: 0 6px 22px rgba(0,0,0,.08); --border: 1px solid #e9e9ef; }
     * { box-sizing: border-box; }
-    body {
-      margin: 0; padding: 24px;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Heiti TC", sans-serif;
-      background: #f6f7fb; color: #1f2330;
-    }
+    body { margin: 0; padding: 24px; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans TC", "PingFang TC", "Heiti TC", sans-serif; background: #f6f7fb; color: #1f2330; }
     .wrap { max-width: 1100px; margin: 0 auto; }
-    header {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px;
-    }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
     h1 { font-size: 22px; margin: 0; letter-spacing: .5px; }
-    .panel {
-      background: #fff; border-radius: var(--radius); box-shadow: var(--shadow);
-      border: var(--border); overflow: hidden;
-    }
-    .toolbar {
-      display: grid; grid-template-columns: 1fr auto auto; gap: 8px;
-      padding: 12px; border-bottom: var(--border); background: #fafbff;
-    }
-    .search {
-      display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: var(--border);
-      border-radius: 10px; background: #fff;
-    }
-    .search input {
-      border: none; outline: none; width: 100%; font-size: 14px; background: transparent;
-    }
-    .meta { font-size: 12px; color: #606778; display: flex; align-items: center; gap: 10px; }
-    .btn {
-      padding: 8px 12px; border-radius: 10px; border: var(--border); background: #fff; cursor: pointer;
-      font-size: 14px;
-    }
+    .panel { background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); border: var(--border); overflow: hidden; }
+    .toolbar { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 12px; border-bottom: var(--border); background: #fafbff; }
+    .search { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: var(--border); border-radius: 10px; background: #fff; }
+    .search input { border: none; outline: none; width: 100%; font-size: 14px; background: transparent; }
+    .btn { padding: 8px 12px; border-radius: 10px; border: var(--border); background: #fff; cursor: pointer; font-size: 14px; }
     .btn:active { transform: translateY(1px); }
-    .table-wrap {
-      overflow: auto; max-height: calc(100vh - 220px);
-    }
+    .table-wrap { overflow: auto; max-height: calc(100vh - 220px); }
     table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 720px; }
-    thead th {
-      position: sticky; top: 0; background: #fff; z-index: 1; font-weight: 600;
-      text-align: left; font-size: 13px; color: #3d4252; padding: 12px; border-bottom: var(--border);
-      user-select: none; cursor: pointer;
-    }
+    thead th { position: sticky; top: 0; background: #fff; z-index: 1; font-weight: 600; text-align: left; font-size: 13px; color: #3d4252; padding: 12px; border-bottom: var(--border); user-select: none; cursor: pointer; }
     tbody td { padding: 12px; border-bottom: 1px dashed #eef0f6; font-size: 14px; }
     tbody tr:hover { background: #fcfdff; }
-    .badge {
-      display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 999px; border: var(--border); background: #fff;
-    }
-    .status {
-      display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: #606778;
-    }
-    .loading {
-      padding: 32px; text-align: center; color: #606778; font-size: 14px;
-    }
-    .error {
-      padding: 12px; color: #a40000; background: #fff3f3; border-top: 1px solid #ffd4d4;
-      border-bottom: 1px solid #ffd4d4; font-size: 13px;
-    }
+    .badge { display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 999px; border: var(--border); background: #fff; }
+    .status { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: #606778; }
+    .loading { padding: 32px; text-align: center; color: #606778; font-size: 14px; }
+    .error { padding: 12px; color: #a40000; background: #fff3f3; border-top: 1px solid #ffd4d4; border-bottom: 1px solid #ffd4d4; font-size: 13px; }
     .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
 </head>
@@ -103,36 +63,35 @@
   </div>
 
   <script>
-    // ======= 需要你修改的設定 =======
+    // ======= 你的設定（已替你填好） =======
     const SHEET_ID   = "1ha6zLeibz4RXKgasduTRFrIhzjJsKiXXmXHQXAmOUOM";
-    const SHEET_NAME = "s";          // 工作表名稱
-    const REFRESH_MS = 5000;              // 自動更新間隔（毫秒）
-    const QUERY_SQL  = "select *";        // 想要篩選/排序可改寫 SQL（gviz 語法）
-    // 例：只要前 100 筆 -> "select * limit 100"
-    // 例：只取某些欄 -> "select A,B,C where C > 0 order by B desc"
+    const GID        = "0";                 // 你貼的網址是 .../edit?gid=0#gid=0
+    const REFRESH_MS = 5000;                // 自動更新（毫秒）
+    const QUERY_SQL  = "select *";          // 想要先篩選/排序可改（gviz SQL 方言）
 
     // ======= 內部程式 =======
     let rawHeaders = [];
     let rawRows = [];
-    let sortState = { index: 0, dir: 1 }; // 1: asc, -1: desc
+    let sortState = { index: 0, dir: 1 };   // 1: 升冪, -1: 降冪
     let timerId = null;
 
-    const $ = sel => document.querySelector(sel);
+    const $  = sel => document.querySelector(sel);
     const $$ = sel => Array.from(document.querySelectorAll(sel));
 
     function gvizUrl() {
       const params = new URLSearchParams({
         tqx: "out:json",
-        sheet: SHEET_NAME,
-        tq: QUERY_SQL,
-        _: Date.now().toString(), // 防快取
+        tq : QUERY_SQL,   // 用 tq + gid（不再用 sheet name，避免拼錯）
+        gid: GID,
+        _:  Date.now().toString()  // 防快取
       });
       return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?${params.toString()}`;
     }
 
-    function setLoading(v) { $("#loading").style.display = v ? "block" : "none"; }
+    function setLoading(v) { const el=$("#loading"); if (el) el.style.display = v ? "block" : "none"; }
     function setError(msg) {
       const el = $("#error");
+      if (!el) return;
       if (msg) { el.textContent = msg; el.style.display = "block"; }
       else { el.style.display = "none"; el.textContent = ""; }
     }
@@ -140,19 +99,20 @@
     async function fetchSheet() {
       setError(""); setLoading(true);
       try {
-        const res = await fetch(gvizUrl(), { cache: "no-store" });
+        const res  = await fetch(gvizUrl(), { cache: "no-store" });
         const text = await res.text();
-        // gviz 包在函式呼叫中，剝掉前綴/後綴
+        // gviz 會回傳 google.visualization.Query.setResponse({...})；剝掉包裝函式
         const json = JSON.parse(text.replace(/^[^{]+/, "").replace(/;?$/, ""));
         if (!json || !json.table) throw new Error("回應格式不正確");
         const table = json.table;
-        rawHeaders = table.cols.map(c => (c.label || c.id || "").trim());
-        rawRows = table.rows.map(r => r.c.map(c => (c ? c.v : "")));
+        rawHeaders  = table.cols.map(c => (c.label || c.id || "").trim());
+        rawRows     = table.rows.map(r => r.c.map(c => (c ? c.v : "")));
         render();
-        $("#last-updated").textContent = "最後更新：" + new Date().toLocaleString("zh-TW", { hour12:false });
+        const lu = $("#last-updated");
+        if (lu) lu.textContent = "最後更新：" + new Date().toLocaleString("zh-TW", { hour12:false });
       } catch (err) {
         console.error(err);
-        setError("讀取資料發生問題，請確認試算表是否設為『知道連結的人可檢視』，以及 SHEET_ID / SHEET_NAME 是否正確。");
+        setError("讀取資料發生問題，請確認分享權限是否為『知道連結的人可檢視』。");
       } finally {
         setLoading(false);
       }
@@ -164,36 +124,30 @@
 
     function render() {
       // 搜尋過濾
-      const q = ($("#q").value || "").trim().toLowerCase();
-      let rows = rawRows.filter(r =>
-        !q || r.some(cell => String(cell).toLowerCase().includes(q))
-      );
+      const q = ($("#q")?.value || "").trim().toLowerCase();
+      let rows = rawRows.filter(r => !q || r.some(cell => String(cell).toLowerCase().includes(q)));
 
       // 排序
       const { index, dir } = sortState;
       rows.sort((a, b) => {
-        const x = a[index]; const y = b[index];
-        // 嘗試數值比較
-        const nx = parseFloat(x); const ny = parseFloat(y);
+        const x = a[index], y = b[index];
+        const nx = parseFloat(x), ny = parseFloat(y);
         if (!isNaN(nx) && !isNaN(ny)) return (nx - ny) * dir;
-        // 嘗試日期比較
-        const dx = Date.parse(x); const dy = Date.parse(y);
+        const dx = Date.parse(x), dy = Date.parse(y);
         if (!isNaN(dx) && !isNaN(dy)) return (dx - dy) * dir;
-        // 字串比較
         return String(x).localeCompare(String(y), "zh-Hant") * dir;
       });
 
-      // 表頭
+      // 表頭 / 表身
       const headers = rawHeaders.length ? rawHeaders : rows[0]?.map((_,i)=>`欄位${i+1}`) || [];
-      $("#thead").innerHTML = `<tr>${
+      const thead = $("#thead"), tbody = $("#tbody");
+      if (thead) thead.innerHTML = `<tr>${
         headers.map((h,i) => {
           const arrow = sortState.index === i ? (sortState.dir === 1 ? "▲" : "▼") : "↕";
           return `<th data-idx="${i}" title="點擊排序">${escapeHtml(h)} ${arrow}</th>`;
         }).join("")
       }</tr>`;
-
-      // 表身
-      $("#tbody").innerHTML = rows.map(r =>
+      if (tbody) tbody.innerHTML = rows.map(r =>
         `<tr>${r.map(x => `<td>${formatCell(x)}</td>`).join("")}</tr>`
       ).join("");
 
@@ -209,9 +163,8 @@
     }
 
     function formatCell(val) {
-      // 讓看板更友善：自動辨識連結、圖片、布林、空值
       const s = String(val ?? "");
-      if (s.match(/\.(png|jpg|jpeg|gif|webp)(\?.*)?$/i)) {
+      if (/\.(png|jpg|jpeg|gif|webp)(\?.*)?$/i.test(s)) {
         return `<img src="${escapeHtml(s)}" alt="" style="max-height:38px; border-radius:6px;" loading="lazy">`;
       }
       if (/^https?:\/\//i.test(s)) {
@@ -224,59 +177,46 @@
     }
 
     // 匯出目前表格為 CSV（套用目前的搜尋與排序）
+    function csvEscape(v) { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; }
     function exportCsv() {
-      const q = ($("#q").value || "").trim().toLowerCase();
+      const q = ($("#q")?.value || "").trim().toLowerCase();
       let rows = rawRows.filter(r => !q || r.some(cell => String(cell).toLowerCase().includes(q)));
       const { index, dir } = sortState;
       rows.sort((a, b) => {
-        const x = a[index]; const y = b[index];
-        const nx = parseFloat(x); const ny = parseFloat(y);
+        const x = a[index], y = b[index];
+        const nx = parseFloat(x), ny = parseFloat(y);
         if (!isNaN(nx) && !isNaN(ny)) return (nx - ny) * dir;
-        const dx = Date.parse(x); const dy = Date.parse(y);
+        const dx = Date.parse(x), dy = Date.parse(y);
         if (!isNaN(dx) && !isNaN(dy)) return (dx - dy) * dir;
         return String(x).localeCompare(String(y), "zh-Hant") * dir;
       });
-
       const headers = rawHeaders.length ? rawHeaders : rows[0]?.map((_,i)=>`欄位${i+1}`) || [];
-      const lines = [
-        headers.map(csvEscape).join(","),
-        ...rows.map(r => r.map(csvEscape).join(","))
-      ].join("\n");
-
+      const lines = [ headers.map(csvEscape).join(","), ...rows.map(r => r.map(csvEscape).join(",")) ].join("\n");
       const blob = new Blob([lines], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
       a.href = url; a.download = `sheet-export-${new Date().toISOString().slice(0,19).replace(/[:T]/g,'')}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function csvEscape(v) {
-      const s = String(v ?? "");
-      if (/[",\n]/.test(s)) return `"${s.replace(/"/g,'""')}"`;
-      return s;
+      a.click(); URL.revokeObjectURL(url);
     }
 
     // 事件
-    $("#q").addEventListener("input", () => render());
-    $("#btn-refresh").addEventListener("click", () => fetchSheet());
-    $("#btn-export").addEventListener("click", exportCsv);
+    $("#q")?.addEventListener("input", render);
+    $("#btn-refresh")?.addEventListener("click", fetchSheet);
+    $("#btn-export")?.addEventListener("click", exportCsv);
 
-    // 啟動自動更新（含簡單退避：連續錯誤時拉長間隔）
+    // 自動更新（含退避：連續錯誤時拉長間隔）
     let consecutiveErrors = 0;
     async function autoRefreshLoop() {
-      try {
-        await fetchSheet();
-        consecutiveErrors = 0;
-      } catch { consecutiveErrors++; }
-      const wait = REFRESH_MS * Math.min(1 + consecutiveErrors, 6); // 最多 x6 間隔
-      $("#refresh-badge").textContent = `每 ${Math.round(wait/1000)} 秒更新`;
+      try { await fetchSheet(); consecutiveErrors = 0; }
+      catch { consecutiveErrors++; }
+      const wait = REFRESH_MS * Math.min(1 + consecutiveErrors, 6);
+      const b = $("#refresh-badge"); if (b) b.textContent = `每 ${Math.round(wait/1000)} 秒更新`;
       timerId = setTimeout(autoRefreshLoop, wait);
     }
 
     // 首次載入
     autoRefreshLoop();
-    // 離開頁面時清理
+    // 離開頁面清理
     window.addEventListener("beforeunload", () => { if (timerId) clearTimeout(timerId); });
   </script>
 </body>
