@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>6人網球單打循環賽｜Live</title>
+<title>6人網球單打循環賽｜多場地＋即時局分＋投影模式</title>
 <style>
   :root{
     --bg:#0f1115;--card:#151925;--muted:#94a3b8;--text:#e6edf3;--accent:#5b9cff;
@@ -19,7 +19,7 @@
   header{padding:26px 16px 8px;text-align:center}
   h1{margin:0;font-size:clamp(22px,2.4vw,34px)}
   .sub{color:var(--muted);font-size:14px;margin-top:6px}
-  .container{max-width:1100px;margin:18px auto 80px;padding:0 16px}
+  .container{max-width:1200px;margin:18px auto 84px;padding:0 16px}
   .card{background:linear-gradient(180deg,rgba(255,255,255,.03),transparent),var(--card);border:1px solid var(--border);
         border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
   .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--chip);
@@ -27,7 +27,8 @@
   .grid{display:grid;gap:10px}
   .two{grid-template-columns:1fr 1fr}
   .three{grid-template-columns:repeat(3,1fr)}
-  @media (max-width:900px){.two,.three{grid-template-columns:1fr}}
+  .four{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:1000px){.two,.three,.four{grid-template-columns:1fr}}
   input[type="text"], select{width:100%;padding:10px 12px;border-radius:10px;background:#0d1421;color:var(--text);border:1px solid var(--border)}
   @media (prefers-color-scheme: light){input[type="text"], select{background:#fff}}
   .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
@@ -43,21 +44,35 @@
   .nameCell{text-align:left}
   .match{display:grid;gap:8px;grid-template-columns:1.2fr auto 1.2fr;align-items:center;border:1px dashed var(--border);border-radius:12px;padding:12px;background:rgba(255,255,255,.02)}
   .vs{text-align:center;color:var(--muted);font-size:12px}
-  .scoreRow{grid-column:1/-1;display:grid;gap:8px;grid-template-columns:1fr}
+  .scoreRow{grid-column:1/-1;display:grid;gap:8px}
+  .liveSetRow{display:grid;gap:8px;grid-template-columns:1fr 1fr auto}
+  .liveCtrls{display:flex;gap:8px;justify-content:center;align-items:center}
+  .chip{padding:6px 10px;border-radius:999px;background:var(--chip);border:1px solid var(--border)}
   .fixed-bottom-bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.35));display:flex;justify-content:center;z-index:30}
   .center-splash{display:flex;align-items:center;justify-content:center;min-height:45vh}
   .kbd{padding:2px 6px;border:1px solid var(--border);border-bottom-width:2px;border-radius:6px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;background:var(--chip);color:var(--text)}
   .roleTag{margin-left:6px}
-  .readonly input,.readonly select{pointer-events:none;opacity:.7}
+  .readonly input,.readonly select,.readonly button.ctrl{pointer-events:none;opacity:.7}
   .woTag{font-size:12px;color:var(--warn)}
+  .courtTitle{font-weight:700;margin-top:6px}
+  /* 投影模式 */
+  body.projector .container{max-width:98vw}
+  body.projector .card{background:transparent;border-color:#2a3755}
+  body.projector .match{border-width:2px}
+  body.projector .projector-hide{display:none !important}
+  body.projector .projector-big h2{font-size:2.2rem}
+  body.projector .match{font-size:1.5rem}
+  body.projector th, body.projector td{font-size:1.2rem}
+  body.projector header{padding:10px 10px}
 </style>
 </head>
 <body>
 <header>
   <h1>6 人網球單打循環賽</h1>
-  <div class="sub">角色選擇 ➜（工作人員輸入比分）➜ 觀賽者即時同步｜支援棄賽（只計勝負）</div>
+  <div class="sub">多場地 × 即時局分 × 投影模式｜角色保護與同步</div>
 </header>
 
+<!-- 角色選擇 -->
 <div id="roleGate" class="container">
   <div class="card">
     <div class="pill">選擇角色</div>
@@ -71,6 +86,7 @@
   </div>
 </div>
 
+<!-- 主要應用 -->
 <div id="app" class="container" style="display:none">
   <div class="card">
     <div class="pill">
@@ -83,22 +99,25 @@
       <button id="saveBtn">手動儲存</button>
       <button id="loadBtn">載入儲存</button>
       <button id="exportBtn">匯出 JSON</button>
-      <label class="btn" for="importFile"><input id="importFile" type="file" accept=".json" style="display:none">匯入 JSON</label>
+      <label class="btn projector-hide" for="importFile"><input id="importFile" type="file" accept=".json" style="display:none">匯入 JSON</label>
       <button id="switchRoleBtn">切換角色</button>
+      <button id="toggleProjectorBtn">切換投影模式</button>
     </div>
-    <div class="sub" style="margin-top:6px">提示：按 <span class="kbd">S</span> 可快速切換觀賽者/工作人員（需有密碼）。</div>
+    <div class="sub" style="margin-top:6px">
+      提示：按 <span class="kbd">S</span> 快速切換觀賽者/工作人員（需密碼）；<span class="kbd">P</span> 切換投影模式。
+    </div>
   </div>
 
   <div class="grid two">
-    <div class="card" id="liveBoardCard" style="display:none">
-      <div class="pill">即時對戰紀錄 Live Board</div>
-      <div id="liveBoard"></div>
-      <div class="sub" style="margin-top:6px">
-        比分輸入格式：<code>6-3, 4-6, 7-5</code>（或兩盤直落）。<br/>
-        棄賽設定：「只計勝負、不計盤局數」。
-      </div>
+    <!-- 多場地管理 -->
+    <div class="card projector-big">
+      <div class="pill">場地與指派</div>
+      <div class="grid four projector-hide" id="courtInputs"></div>
+      <div class="sub projector-hide">可填 1～6 個場地名稱（空白會隱藏）。</div>
+      <div class="grid" id="courtBoards" style="margin-top:10px;gap:14px"></div>
     </div>
 
+    <!-- 戰績 -->
     <div class="card" id="standingsCard" style="display:none">
       <div class="pill">戰績與排名</div>
       <div style="overflow:auto">
@@ -119,66 +138,61 @@
 </div>
 
 <script>
-/** ===================== 基本工具 ===================== */
-const $ = sel => document.querySelector(sel);
-const $$ = sel => Array.from(document.querySelectorAll(sel));
-const STORAGE_KEY = 'rr-tennis-6-live';
-const STAFF_PIN = '246810'; // ★★★ 修改這裡更換計分人員密碼（僅數字）
+/** ========= 工具與同步 ========= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const STORAGE_KEY = 'rr-tennis-6-live-v2';
+const STAFF_PIN = '246810'; // ★ 修改此處更換工作人員密碼（僅數字）
 
-// 跨分頁即時同步
-const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('rr6') : null;
+const bc = ('BroadcastChannel' in window) ? new BroadcastChannel('rr6v2') : null;
 function broadcast(type, payload){ try{ bc && bc.postMessage({type, payload}); }catch(e){} }
-if (bc) bc.onmessage = (ev)=>{ handleExternalUpdate(ev.data); };
-window.addEventListener('storage', (e)=>{ if (e.key === STORAGE_KEY) { try{
-  const st = JSON.parse(e.newValue || '{}'); if (st?.__ts && st.__ts !== state.__ts) { state = st; renderAll(); }
-} catch(err){} }});
+if (bc) bc.onmessage = (ev)=>{ if (ev.data?.type==='state'){ adoptState(ev.data.payload); } };
 
-function saveState(){
-  state.__ts = Date.now();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  broadcast('state', state);
-}
-function loadState(){
-  try{ const raw = localStorage.getItem(STORAGE_KEY); return raw? JSON.parse(raw): null; }catch(e){ return null; }
-}
-function handleExternalUpdate(msg){
-  if (!msg || msg.type!=='state' || !msg.payload) return;
-  if (msg.payload.__ts && msg.payload.__ts !== state.__ts){
-    state = msg.payload; renderAll();
-  }
-}
+window.addEventListener('storage', (e)=>{ if (e.key===STORAGE_KEY && e.newValue){ try{
+  const s = JSON.parse(e.newValue); adoptState(s);
+} catch(err){} } });
 
-/** ===================== 資料模型 ===================== */
+function saveState(){ state.__ts = Date.now(); localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); broadcast('state', state); }
+function loadState(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw? JSON.parse(raw): null; }catch(e){ return null; } }
+function adoptState(s){ if (!s || s.__ts===state.__ts) return; state = s; renderAll(); }
+
+/** ========= 資料模型 ========= */
 const DEFAULT_NAMES = ['Player A','Player B','Player C','Player D','Player E','Player F'];
 
 let state = {
-  role: 'spectator', // 'spectator' | 'staff'
+  role:'spectator', // 'spectator' | 'staff'
   players: DEFAULT_NAMES.slice(),
-  rounds: [],        // [ [ [A,B],[C,D],[E,F] ], ... x5 ]
-  results: {},       // key=r{r}_m{m} -> { scoreText, forfeit:'none'|'A'|'B'|'both' }
+  rounds: [],        // [ [ [A,B],[C,D],[E,F] ], ... ] (5 輪)
+  results: {},       // key=r{r}_m{m} -> { scoreText, forfeit:'none'|'A'|'B'|'both', live:{ga,gb} }
+  courts: ['Court 1','Court 2','Court 3'], // 場地名稱（空白=隱藏）
+  assign: {},        // key -> courtIndex (0-based) 或 null
   __ts: 0
 };
 
-/** ===================== 比分解析與計算 ===================== */
+/** ========= 規則：解析與計算 ========= */
 function parseScore(text){
   if(!text || !text.trim()) return {valid:false, reason:'empty'};
-  const rawSets = text.split(',').map(s=>s.trim()).filter(Boolean);
+  const raw = text.split(',').map(s=>s.trim()).filter(Boolean);
   let swA=0, swB=0, gwA=0, gwB=0;
-  for(const s of rawSets){
+  for(const s of raw){
     const m = s.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/);
     if(!m) return {valid:false, reason:'format', at:s};
-    const a = +m[1], b = +m[2];
-    gwA += a; gwB += b;
+    const a=+m[1], b=+m[2];
     if (a>b) swA++; else if (b>a) swB++;
+    gwA+=a; gwB+=b;
   }
-  if (swA===swB) {
-    // 若盤數打平，視為未決，避免亂算勝負
-    return {valid:true, undecided:true, sets:rawSets.length, sw:[swA,swB], gw:[gwA,gwB]};
-  }
-  return {valid:true, sets:rawSets.length, sw:[swA,swB], gw:[gwA,gwB]};
+  if (swA===swB) return {valid:true, undecided:true, sets:raw.length, sw:[swA,swB], gw:[gwA,gwB]};
+  return {valid:true, sets:raw.length, sw:[swA,swB], gw:[gwA,gwB]};
+}
+
+function autoSetFinished(a,b){
+  // 簡化：6 並差≥2；或 7-5 / 7-6；或 >=8 並差2
+  const max=Math.max(a,b), min=Math.min(a,b), diff=Math.abs(a-b);
+  return (max===6 && diff>=2) || (max===7 && (diff===1||diff===2)) || (max>=8 && diff===2);
 }
 
 function computeStandings(){
+  if (!state.rounds?.length){ return []; }
   const names = state.players.slice();
   const stats = Object.fromEntries(names.map(n=>[n,{name:n,W:0,L:0,SW:0,SL:0,GW:0,GL:0}]));
   const h2h = {};
@@ -187,166 +201,303 @@ function computeStandings(){
     pairings.forEach((p, mIdx)=>{
       const [A,B] = p;
       const key = `r${rIdx}_m${mIdx}`;
-      const rec = state.results[key];
-      if(!rec) return;
+      const rec = state.results[key]; if(!rec) return;
 
-      // 棄賽處理：只計勝負、不計盤/局
+      // 棄賽：只計勝負
       if (rec.forfeit && rec.forfeit!=='none'){
         if (rec.forfeit==='A'){ stats[B].W++; stats[A].L++; h2h[`${B}__${A}`]=1; }
         else if (rec.forfeit==='B'){ stats[A].W++; stats[B].L++; h2h[`${A}__${B}`]=1; }
-        // both：不計（兩敗俱傷），或你想記 L+L；此處選擇「不計」較合理
         return;
       }
-
       if (!rec.scoreText) return;
       const info = parseScore(rec.scoreText);
-      if(!info.valid || info.undecided) return;
+      if (!info.valid || info.undecided) return;
 
-      const swA = info.sw[0], swB = info.sw[1];
-      const gwA = info.gw[0], gwB = info.gw[1];
-
+      const [swA,swB] = info.sw; const [gwA,gwB]=info.gw;
       if (swA>swB){ stats[A].W++; stats[B].L++; h2h[`${A}__${B}`]=1; }
       else { stats[B].W++; stats[A].L++; h2h[`${B}__${A}`]=1; }
 
-      stats[A].SW += swA; stats[A].SL += swB;
-      stats[B].SW += swB; stats[B].SL += swA;
-      stats[A].GW += gwA; stats[A].GL += gwB;
-      stats[B].GW += gwB; stats[B].GL += gwA;
+      stats[A].SW+=swA; stats[A].SL+=swB; stats[B].SW+=swB; stats[B].SL+=swA;
+      stats[A].GW+=gwA; stats[A].GL+=gwB; stats[B].GW+=gwB; stats[B].GL+=gwA;
     });
   });
 
   const arr = Object.values(stats);
   arr.sort((a,b)=>{
     if (b.W!==a.W) return b.W-a.W;
-    const ab = h2h[`${a.name}__${b.name}`]?1:0;
-    const ba = h2h[`${b.name}__${a.name}`]?1:0;
+    const ab=h2h[`${a.name}__${b.name}`]?1:0, ba=h2h[`${b.name}__${a.name}`]?1:0;
     if (ab!==ba) return ba-ab;
     const sdA=a.SW-a.SL, sdB=b.SW-b.SL; if (sdB!==sdA) return sdB-sdA;
     const gdA=a.GW-a.GL, gdB=b.GW-b.GL; if (gdB!==gdA) return gdB-gdA;
     if (b.GW!==a.GW) return b.GW-a.GW;
     return a.name.localeCompare(b.name,'zh-Hant');
   });
-  arr.forEach((p,i)=>{ const t=p.W+p.L; p.rank=i+1; p.pct=t? (p.W/t):0; });
+  arr.forEach((p,i)=>{ const t=p.W+p.L; p.rank=i+1; p.pct=t?(p.W/t):0; });
   return arr;
 }
 
-/** ===================== 排程演算法（6人圓桌） ===================== */
+/** ========= 排程（6人圓桌） ========= */
 function generateRoundRobin(names){
-  const n = names.length;
-  if (n!==6) throw new Error('目前版本限定 6 人');
-  const arr = names.slice();
-  const fixed = arr[0];
-  let others = arr.slice(1);
+  if (names.length!==6) throw new Error('目前版本限定 6 人');
+  const fixed = names[0]; let others = names.slice(1);
   const rounds=[];
-  for (let r=0;r<n-1;r++){
+  for(let r=0;r<5;r++){
     const pairings=[];
-    const left = [fixed, ...others.slice(0,(n/2)-1)];
-    const right = others.slice((n/2)-1).slice().reverse();
-    for (let i=0;i<left.length;i++) pairings.push([left[i], right[i]]);
+    const left=[fixed,...others.slice(0,2)];
+    const right=others.slice(2).slice().reverse();
+    for(let i=0;i<left.length;i++) pairings.push([left[i],right[i]]);
     rounds.push(pairings);
-    others = [others[others.length-1], ...others.slice(0,others.length-1)];
+    others=[others[others.length-1],...others.slice(0,others.length-1)];
   }
-  return rounds; // 5 輪 × 每輪 3 場
+  return rounds;
 }
 
-/** ===================== 介面初始化 ===================== */
+/** ========= UI：建立輸入區 ========= */
 function createPlayerInputs(){
   const wrap = $('#playerInputs'); wrap.innerHTML='';
   for(let i=0;i<6;i++){
-    const inp = document.createElement('input');
-    inp.type='text'; inp.placeholder=`球員 ${i+1}`; inp.value = state.players[i] || '';
+    const inp=document.createElement('input');
+    inp.type='text'; inp.placeholder=`球員 ${i+1}`; inp.value=state.players[i]||'';
     inp.dataset.index=i; wrap.appendChild(inp);
   }
 }
 
-function renderLiveBoard(){
-  const box = $('#liveBoard'); box.innerHTML='';
-  if (!state.rounds?.length){ $('#liveBoardCard').style.display='none'; return; }
-  $('#liveBoardCard').style.display='';
-
-  state.rounds.forEach((pairings, rIdx)=>{
-    const roundEl = document.createElement('div');
-    roundEl.className='card';
-    roundEl.style.padding='12px';
-    roundEl.innerHTML = `<div class="pill">第 ${rIdx+1} 輪</div>`;
-    pairings.forEach((p, mIdx)=>{
-      const [A,B] = p;
-      const key = `r${rIdx}_m${mIdx}`;
-      const rec = state.results[key] || {scoreText:'', forfeit:'none'};
-
-      const matchEl = document.createElement('div');
-      matchEl.className='match';
-      matchEl.innerHTML = `
-        <div>${A}</div>
-        <div class="vs">vs</div>
-        <div>${B}</div>
-        <div class="scoreRow">
-          <div class="grid two">
-            <input type="text" inputmode="numeric" placeholder="輸入比分：如 6-3, 4-6, 7-5" data-k="${key}" class="scoreInp">
-            <select data-k="${key}" class="forfeitSel">
-              <option value="none">正常進行</option>
-              <option value="A">${A} 棄賽</option>
-              <option value="B">${B} 棄賽</option>
-              <option value="both">雙方棄賽（不計）</option>
-            </select>
-          </div>
-          <div class="sub" id="hint_${key}"></div>
-        </div>
-      `;
-      const inp = matchEl.querySelector('.scoreInp');
-      const sel = matchEl.querySelector('.forfeitSel');
-      inp.value = rec.scoreText || '';
-      sel.value = rec.forfeit || 'none';
-
-      const applyHint = ()=>{
-        const h = matchEl.querySelector(`#hint_${key}`);
-        if (sel.value!=='none'){
-          const woText = sel.value==='A' ? `${A} 棄賽，${B} 取得勝場（不計盤/局）`
-                        : sel.value==='B' ? `${B} 棄賽，${A} 取得勝場（不計盤/局）`
-                        : `雙方棄賽，此場不計入`;
-          h.innerHTML = `<span class="woTag">${woText}</span>`;
-          return;
-        }
-        if (!inp.value.trim()){ h.textContent=''; return; }
-        const info = parseScore(inp.value);
-        if (!info.valid){ h.innerHTML = `<span class="err">格式錯誤，請使用 6-4, 6-4 之類格式</span>`; return; }
-        if (info.undecided){ h.innerHTML = `<span class="warn">盤數相同，尚未決定勝負</span>`; return; }
-        const winner = info.sw[0]>info.sw[1] ? A : B;
-        h.innerHTML = `<span class="ok">已記錄</span>｜盤數 ${info.sw[0]}-${info.sw[1]}、局數 ${info.gw[0]}-${info.gw[1]}｜勝者：<strong>${winner}</strong>`;
-      };
-      applyHint();
-
-      // 權限控制：觀賽者不可修改
-      if (state.role!=='staff'){
-        inp.disabled = true; sel.disabled = true; matchEl.classList.add('readonly');
-      } else {
-        inp.addEventListener('input', ()=>{
-          state.results[key] = state.results[key] || {};
-          state.results[key].scoreText = inp.value;
-          // 若有比分則自動切回「正常進行」
-          if (state.results[key].forfeit && state.results[key].forfeit!=='none') {
-            state.results[key].forfeit = 'none';
-            sel.value='none';
-          }
-          saveState(); applyHint(); renderStandings(); // 即時更新
-        });
-        sel.addEventListener('change', ()=>{
-          state.results[key] = state.results[key] || {};
-          state.results[key].forfeit = sel.value;
-          if (sel.value!=='none'){ // 棄賽時清空比分避免混淆
-            state.results[key].scoreText = '';
-            inp.value = '';
-          }
-          saveState(); applyHint(); renderStandings();
-        });
-      }
-
-      roundEl.appendChild(matchEl);
+function createCourtInputs(){
+  const wrap = $('#courtInputs'); wrap.innerHTML='';
+  for(let i=0;i<6;i++){
+    const inp=document.createElement('input');
+    inp.type='text'; inp.placeholder=`場地 ${i+1}`;
+    inp.value = state.courts[i] ?? '';
+    inp.dataset.index=i;
+    // 觀賽者不可改
+    if (state.role!=='staff') inp.disabled = true;
+    inp.addEventListener('input', ()=>{
+      state.courts[i] = inp.value;
+      saveState(); renderCourtBoards();
     });
-    box.appendChild(roundEl);
+    wrap.appendChild(inp);
+  }
+}
+
+/** ========= UI：渲染場地看板 & 比賽控件 ========= */
+function keyOf(rIdx,mIdx){ return `r${rIdx}_m${mIdx}`; }
+
+function renderCourtBoards(){
+  const board = $('#courtBoards'); board.innerHTML='';
+  const activeCourts = state.courts.map((n,idx)=>({name:n?.trim(), idx})).filter(c=>c.name);
+  // 若沒有場地名稱，就顯示一個提示
+  if (activeCourts.length===0){
+    const hint=document.createElement('div');
+    hint.className='sub'; hint.textContent='請在上方輸入至少一個場地名稱';
+    board.appendChild(hint); return;
+  }
+
+  // 依場地建立卡片
+  activeCourts.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='card';
+    const title=document.createElement('h2');
+    title.className='courtTitle'; title.textContent=c.name;
+    card.appendChild(title);
+
+    // 列出所有比賽，提供指派到此場地（下拉）
+    state.rounds.forEach((pairings,rIdx)=>{
+      pairings.forEach((p,mIdx)=>{
+        const [A,B]=p; const k=keyOf(rIdx,mIdx);
+        // 僅顯示：1) 已指派到此場地；或 2) 在投影模式下，顯示此場地的指派；或 3) 工作人員模式顯示所有並可改指派？
+        // 規則：觀賽/投影只顯示指派到該場地的比賽；工作人員還會看到未指派並可指派。
+        const assigned = state.assign[k];
+        const visible = (state.role==='staff') ? (assigned===c.idx || assigned==null) : (assigned===c.idx);
+        if (!visible) return;
+
+        const rec = state.results[k] || {scoreText:'',forfeit:'none',live:{ga:0,gb:0}};
+        if (!rec.live) rec.live={ga:0,gb:0};
+
+        const matchEl=document.createElement('div');
+        matchEl.className='match';
+
+        // 標題＋指派
+        const headL=document.createElement('div'); headL.textContent=A;
+        const vs=document.createElement('div'); vs.className='vs'; vs.textContent='vs';
+        const headR=document.createElement('div'); headR.textContent=B;
+        matchEl.appendChild(headL); matchEl.appendChild(vs); matchEl.appendChild(headR);
+
+        // 行一：比分輸入 + 棄賽 + 指派
+        const row=document.createElement('div'); row.className='scoreRow';
+
+        // 比分輸入框（整場）
+        const scoreInp=document.createElement('input');
+        scoreInp.type='text'; scoreInp.placeholder='整場比分（例：6-3, 4-6, 7-5）';
+        scoreInp.value=rec.scoreText||''; scoreInp.dataset.k=k;
+
+        // 棄賽選單
+        const sel=document.createElement('select'); sel.dataset.k=k;
+        sel.innerHTML=`
+          <option value="none">正常進行</option>
+          <option value="A">${A} 棄賽</option>
+          <option value="B">${B} 棄賽</option>
+          <option value="both">雙方棄賽（不計）</option>
+        `;
+        sel.value=rec.forfeit||'none';
+
+        // 場地下拉（僅工作人員）
+        const courtSel=document.createElement('select');
+        courtSel.dataset.k=k;
+        activeCourts.forEach(ac=>{
+          const opt=document.createElement('option'); opt.value=ac.idx; opt.textContent=ac.name;
+          courtSel.appendChild(opt);
+        });
+        const noneOpt=document.createElement('option'); noneOpt.value=''; noneOpt.textContent='未指派';
+        courtSel.insertBefore(noneOpt, courtSel.firstChild);
+        courtSel.value = (assigned==null ? '' : String(assigned));
+
+        // 狀態提示
+        const hint=document.createElement('div'); hint.className='sub'; hint.id=`hint_${k}`;
+
+        // 行二：即時局分控制列
+        const setRow=document.createElement('div'); setRow.className='liveSetRow';
+        const gaWrap=document.createElement('div');
+        const gbWrap=document.createElement('div');
+
+        const ga=document.createElement('div'); ga.className='chip'; ga.textContent=`${A} 本盤局： ${rec.live.ga||0}`;
+        const gb=document.createElement('div'); gb.className='chip'; gb.textContent=`${B} 本盤局： ${rec.live.gb||0}`;
+
+        const ctrl=document.createElement('div'); ctrl.className='liveCtrls';
+        const btns = {
+          gaPlus: mkCtrlBtn('+', 'ctrl'),
+          gaMinus: mkCtrlBtn('−', 'ctrl'),
+          gbPlus: mkCtrlBtn('+', 'ctrl'),
+          gbMinus: mkCtrlBtn('−', 'ctrl'),
+          endSet: mkCtrlBtn('封盤', 'primary ctrl'),
+          undoSet: mkCtrlBtn('撤銷上一盤', 'ctrl'),
+          reset: mkCtrlBtn('重置本場', 'ctrl'),
+          autoEnd: mkCtrlBtn('自動封盤', 'ctrl')
+        };
+
+        // 自動封盤狀態暫存於記憶體（不存檔）
+        let autoClose = false;
+
+        function updateHint(){
+          if (sel.value!=='none'){
+            hint.innerHTML = `<span class="woTag">${
+              sel.value==='A'? `${A} 棄賽，${B} 取得勝場`:
+              sel.value==='B'? `${B} 棄賽，${A} 取得勝場`:
+              '雙方棄賽，不計入'
+            }（不計盤／局）</span>`;
+            return;
+          }
+          if (!scoreInp.value.trim() && (rec.live.ga||rec.live.gb)){
+            hint.textContent = `本盤暫存：${rec.live.ga}-${rec.live.gb}`;
+            return;
+          }
+          if (!scoreInp.value.trim()){ hint.textContent=''; return; }
+          const info = parseScore(scoreInp.value);
+          if (!info.valid){ hint.innerHTML = `<span class="err">比分格式錯誤</span>`; return; }
+          if (info.undecided){ hint.innerHTML = `<span class="warn">盤數相同，尚未決定勝負</span>`; return; }
+          const winner = info.sw[0]>info.sw[1]? A : B;
+          hint.innerHTML = `<span class="ok">已記錄</span>｜盤數 ${info.sw[0]}-${info.sw[1]}、局數 ${info.gw[0]}-${info.gw[1]}｜勝者：<strong>${winner}</strong>`;
+        }
+
+        function writeStateAndRefresh(){
+          // 變更時寫回 state
+          state.results[k] = rec;
+          saveState();
+          // 更新本卡片
+          ga.textContent=`${A} 本盤局： ${rec.live.ga||0}`;
+          gb.textContent=`${B} 本盤局： ${rec.live.gb||0}`;
+          updateHint();
+          renderStandings(); // 右側表格也更新
+        }
+
+        // 權限：觀賽者只讀
+        if (state.role!=='staff'){
+          scoreInp.disabled = true; sel.disabled = true; courtSel.disabled = true;
+          matchEl.classList.add('readonly');
+        }else{
+          scoreInp.addEventListener('input', ()=>{
+            rec.scoreText = scoreInp.value;
+            if (rec.forfeit && rec.forfeit!=='none'){ rec.forfeit='none'; sel.value='none'; }
+            writeStateAndRefresh();
+          });
+          sel.addEventListener('change', ()=>{
+            rec.forfeit = sel.value || 'none';
+            if (rec.forfeit!=='none'){ rec.scoreText=''; scoreInp.value=''; rec.live={ga:0,gb:0}; }
+            writeStateAndRefresh();
+          });
+          courtSel.addEventListener('change', ()=>{
+            const v = courtSel.value;
+            state.assign[k] = (v===''? null : +v);
+            saveState(); renderCourtBoards();
+          });
+
+          // 即時局分控制：＋／−
+          btns.gaPlus.addEventListener('click', ()=>{ rec.live.ga=(rec.live.ga||0)+1; if (autoClose && autoSetFinished(rec.live.ga, rec.live.gb)) closeSet(); writeStateAndRefresh(); });
+          btns.gaMinus.addEventListener('click', ()=>{ rec.live.ga=Math.max(0,(rec.live.ga||0)-1); writeStateAndRefresh(); });
+          btns.gbPlus.addEventListener('click', ()=>{ rec.live.gb=(rec.live.gb||0)+1; if (autoClose && autoSetFinished(rec.live.ga, rec.live.gb)) closeSet(); writeStateAndRefresh(); });
+          btns.gbMinus.addEventListener('click', ()=>{ rec.live.gb=Math.max(0,(rec.live.gb||0)-1); writeStateAndRefresh(); });
+
+          function closeSet(){
+            const a=rec.live.ga||0, b=rec.live.gb||0;
+            if (a===0 && b===0) return;
+            // 封盤：把 a-b 追加到 scoreText
+            const s = `${a}-${b}`;
+            rec.scoreText = (rec.scoreText?.trim()? `${rec.scoreText}, ${s}` : s);
+            rec.live={ga:0,gb:0};
+            scoreInp.value = rec.scoreText;
+          }
+          btns.endSet.addEventListener('click', ()=>{ closeSet(); writeStateAndRefresh(); });
+          btns.undoSet.addEventListener('click', ()=>{
+            if (!rec.scoreText?.trim()) return;
+            const parts = rec.scoreText.split(',').map(x=>x.trim()).filter(Boolean);
+            const last = parts.pop();
+            rec.scoreText = parts.join(', ');
+            scoreInp.value = rec.scoreText;
+            // 將上一盤回填到 live 方便修正
+            const m = last?.match(/^(\d{1,2})-(\d{1,2})$/);
+            if (m){ rec.live={ga:+m[1], gb:+m[2]}; }
+            writeStateAndRefresh();
+          });
+          btns.reset.addEventListener('click', ()=>{
+            if (!confirm('確定要重置本場所有資料？')) return;
+            rec.scoreText=''; scoreInp.value=''; rec.live={ga:0,gb:0}; rec.forfeit='none'; sel.value='none';
+            writeStateAndRefresh();
+          });
+          btns.autoEnd.addEventListener('click', ()=>{
+            autoClose=!autoClose;
+            btns.autoEnd.textContent = autoClose? '自動封盤：開' : '自動封盤';
+          });
+        }
+
+        gaWrap.appendChild(ga); gbWrap.appendChild(gb);
+        ctrl.append(btns.gaMinus, btns.gaPlus, btns.gbMinus, btns.gbPlus, btns.endSet, btns.undoSet, btns.reset, btns.autoEnd);
+
+        setRow.appendChild(gaWrap); setRow.appendChild(gbWrap); setRow.appendChild(ctrl);
+
+        // 只有工作人員能看到輸入控件；投影模式也隱藏控件
+        if (state.role!=='staff'){ row.classList.add('readonly'); setRow.classList.add('readonly'); }
+        if (document.body.classList.contains('projector')){ row.classList.add('projector-hide'); setRow.classList.add('projector-hide'); }
+
+        row.appendChild(scoreInp);
+        row.appendChild(sel);
+        if (state.role==='staff') row.appendChild(courtSel);
+        matchEl.appendChild(row);
+        matchEl.appendChild(hint);
+        matchEl.appendChild(setRow);
+
+        // 初始提示
+        updateHint();
+
+        card.appendChild(matchEl);
+      });
+    });
+
+    board.appendChild(card);
   });
 }
 
+function mkCtrlBtn(text, cls=''){ const b=document.createElement('button'); b.textContent=text; b.className=cls; return b; }
+
+/** ========= 渲染戰績 ========= */
 function renderStandings(){
   const tbody = $('#standingsTable tbody'); if(!tbody) return;
   if (!state.rounds?.length){ $('#standingsCard').style.display='none'; return; }
@@ -370,13 +521,16 @@ function renderStandings(){
   });
 }
 
+/** ========= 入口／共用渲染 ========= */
 function renderAll(){
-  // 玩家欄位
+  // players
   $$('#playerInputs input').forEach((inp,i)=> inp.value = state.players[i] || '');
-  // Role badge
+  // courts
+  createCourtInputs();
+  // role badge
   $('#roleBadge').textContent = state.role==='staff' ? '（計分工作人員）' : '（觀賽者）';
-  // Live board + standings
-  renderLiveBoard(); renderStandings();
+  // boards & standings
+  renderCourtBoards(); renderStandings();
 }
 
 function enterApp(){
@@ -386,26 +540,39 @@ function enterApp(){
   renderAll();
 }
 
-/** ===================== 綁定與互動 ===================== */
+/** ========= 綁定 ========= */
 function bind(){
-  // 角色入口
-  $('#enterSpectator').addEventListener('click', ()=>{
-    state.role='spectator'; saveState(); enterApp();
-  });
+  // 角色
+  $('#enterSpectator').addEventListener('click', ()=>{ state.role='spectator'; saveState(); enterApp(); });
   $('#enterStaff').addEventListener('click', ()=>{
     const pin = prompt('請輸入工作人員數字密碼：');
     if (pin===STAFF_PIN){ state.role='staff'; saveState(); enterApp(); }
     else if (pin!==null){ alert('密碼錯誤'); }
   });
-
-  // 內部切換
   $('#switchRoleBtn').addEventListener('click', ()=>{
     if (state.role==='staff'){ state.role='spectator'; saveState(); renderAll(); return; }
     const pin = prompt('請輸入工作人員數字密碼：');
     if (pin===STAFF_PIN){ state.role='staff'; saveState(); renderAll(); } else if (pin!==null){ alert('密碼錯誤'); }
   });
 
-  // players
+  // 投影模式
+  function toggleProjector(){
+    document.body.classList.toggle('projector');
+    renderAll();
+  }
+  $('#toggleProjectorBtn').addEventListener('click', toggleProjector);
+  window.addEventListener('keydown', (e)=>{
+    if (e.key.toLowerCase()==='p') toggleProjector();
+    if (e.key.toLowerCase()==='s'){
+      if (state.role==='staff'){ state.role='spectator'; saveState(); renderAll(); }
+      else{
+        const pin = prompt('請輸入工作人員密碼：');
+        if (pin===STAFF_PIN){ state.role='staff'; saveState(); renderAll(); }
+      }
+    }
+  });
+
+  // 產生賽程
   $('#genScheduleBtn').addEventListener('click', ()=>{
     const names = $$('#playerInputs input').map(i=> i.value.trim() || i.placeholder);
     if (new Set(names).size<names.length){
@@ -414,9 +581,11 @@ function bind(){
     state.players = names;
     state.rounds = generateRoundRobin(names);
     state.results = {};
+    state.assign = {};
     saveState(); renderAll();
   });
 
+  // 存取
   $('#saveBtn').addEventListener('click', saveState);
   $('#loadBtn').addEventListener('click', ()=>{
     const s = loadState(); if(!s){ alert('沒有可載入的資料'); return; }
@@ -425,7 +594,7 @@ function bind(){
   $('#exportBtn').addEventListener('click', ()=>{
     const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href=url; a.download='round_robin_6_live.json';
+    const a = document.createElement('a'); a.href=url; a.download='round_robin_6_live_v2.json';
     document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),500);
   });
   $('#importFile').addEventListener('change', (e)=>{
@@ -440,28 +609,13 @@ function bind(){
     };
     reader.readAsText(f); e.target.value='';
   });
-
-  // 快捷鍵 S 切換角色（需密碼）
-  window.addEventListener('keydown', (ev)=>{
-    if (ev.key.toLowerCase()==='s'){
-      if (state.role==='staff'){ state.role='spectator'; saveState(); renderAll(); }
-      else{
-        const pin = prompt('請輸入工作人員密碼：');
-        if (pin===STAFF_PIN){ state.role='staff'; saveState(); renderAll(); }
-      }
-    }
-  });
 }
 
-/** ===================== 啟動 ===================== */
+/** ========= 啟動 ========= */
 (function init(){
   createPlayerInputs();
   bind();
-  const saved = loadState();
-  if (saved){
-    state = saved;
-  }
-  // 若曾經進入過 app，就直接顯示（沿用角色）
+  const saved = loadState(); if (saved) state = saved;
   if (state.rounds?.length || state.__ts){
     $('#roleGate').style.display='none';
     $('#app').style.display='';
